@@ -13,10 +13,12 @@ import javax.annotation.PostConstruct;
 public class ZahirService {
 
     private static final String URL_API_PRODUCT = "/api/product";
+    private static final String URL_API_ACCOUNT = "/api/account";
     private static final String URL_API_CUSTOMER = "/api/contact";
     private static final String URL_API_DEPARTMENT = "/api/departments";
     private static final String URL_API_PROJECT = "/api/projects";
     private static final String URL_API_INVOICE = "/api/sales_invoice";
+    private static final String URL_API_PAYMENT = "/api/receivable_payments";
 
     @Value("${zahir.api.url}") private String zahirApiUrl;
     @Value("${zahir.api.key}") private String zahirApiKey;
@@ -35,6 +37,12 @@ public class ZahirService {
         return webClient
                 .get().uri(URL_API_PRODUCT+"?code={code}", code)
                 .retrieve().bodyToFlux(Product.class).blockFirst();
+    }
+
+    public Account findAccountByCode(String code) {
+        return webClient
+                .get().uri(URL_API_ACCOUNT+"?code={code}", code)
+                .retrieve().bodyToFlux(Account.class).blockFirst();
     }
 
     public Customer findCustomerByCode(String code) {
@@ -67,5 +75,24 @@ public class ZahirService {
                         Mono.error(new IllegalStateException())
                 )
                 .bodyToMono(SalesInvoice.class).block();
+    }
+
+    public SalesInvoice getSalesInvoice(String number) {
+        return webClient
+                .get().uri(URL_API_INVOICE+"?invoice_number={number}", number)
+                .retrieve().bodyToFlux(SalesInvoice.class).blockFirst();
+    }
+
+    public Payment createPayment(PaymentRequest paymentRequest) {
+        return webClient.post().uri(URL_API_PAYMENT)
+                .body(Mono.just(paymentRequest), PaymentRequest.class)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse ->
+                        Mono.error(new IllegalStateException(clientResponse.toString()))
+                )
+                .onStatus(HttpStatus::is5xxServerError, clientResponse ->
+                        Mono.error(new IllegalStateException(clientResponse.toString()))
+                )
+                .bodyToMono(Payment.class).block();
     }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
@@ -17,4 +18,5 @@ public class SalesInvoice {
     private Department department;
     private Project project;
     private List<Product> lineItems;
+    private BigDecimal totalAmount;
 }

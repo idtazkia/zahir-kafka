@@ -109,4 +109,20 @@ public class ZahirServiceTests {
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
     }
+
+    @Test
+    public void createPayment() throws Exception {
+        SalesInvoice invoice = zahirService.getSalesInvoice("00000073");
+        Account bnisy = zahirService.findAccountByCode("111200400");
+        PaymentRequest paymentRequest = new PaymentRequest();
+        paymentRequest.setCustomer(invoice.getCustomer().getId());
+        paymentRequest.setTransactionDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        paymentRequest.getLineItems().add(new PaymentRequestLineItem(invoice.getId(), invoice.getTotalAmount()));
+        paymentRequest.setCash(new PaymentRequestCash(bnisy.getId()));
+
+        System.out.println(objectMapper.writeValueAsString(paymentRequest));
+        Payment hasil = zahirService.createPayment(paymentRequest);
+        Assert.assertNotNull(hasil);
+        System.out.println(objectMapper.writeValueAsString(hasil));
+    }
 }
