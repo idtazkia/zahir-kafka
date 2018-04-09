@@ -1,4 +1,4 @@
-package id.ac.tazkia.zahir.kafka.zahirkafka;
+package id.ac.tazkia.zahir;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
