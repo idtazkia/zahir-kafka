@@ -2,6 +2,7 @@ package id.ac.tazkia.zahir.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.tazkia.zahir.dto.Customer;
+import id.ac.tazkia.zahir.dto.Department;
 import id.ac.tazkia.zahir.dto.Product;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,5 +33,14 @@ public class ZahirServiceTests {
         Customer customer = zahirService.findCustomerByCode(code);
         Assert.assertNotNull(customer);
         Assert.assertEquals("Ahmad Misluha", customer.getName());
+    }
+
+    @Test
+    public void testDepartmentByCode() {
+        String code = "1";
+
+        Department department = zahirService.findDepartmentByCode(code);
+        Assert.assertNotNull(department);
+        Assert.assertEquals("Yayasan", department.getName());
     }
 }
