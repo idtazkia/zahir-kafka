@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.tazkia.zahir.dto.Customer;
 import id.ac.tazkia.zahir.dto.Department;
 import id.ac.tazkia.zahir.dto.Product;
+import id.ac.tazkia.zahir.dto.Project;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,5 +43,14 @@ public class ZahirServiceTests {
         Department department = zahirService.findDepartmentByCode(code);
         Assert.assertNotNull(department);
         Assert.assertEquals("Yayasan", department.getName());
+    }
+
+    @Test
+    public void testProjectByCode() {
+        String code = "1";
+
+        Project project = zahirService.findProjectByCode(code);
+        Assert.assertNotNull(project);
+        Assert.assertEquals("Program Studi S1 Ekonomi Syariah", project.getName());
     }
 }
