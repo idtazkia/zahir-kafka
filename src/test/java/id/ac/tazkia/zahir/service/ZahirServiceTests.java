@@ -64,6 +64,7 @@ public class ZahirServiceTests {
         Customer mhs = zahirService.findCustomerByCode("16103011");
 
         SalesInvoiceRequest request = new SalesInvoiceRequest();
+        request.setTermOfPayment(new TermOfPayment(60));
         request.setIsPosted(true);
         request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         request.setCustomer(mhs.getId());

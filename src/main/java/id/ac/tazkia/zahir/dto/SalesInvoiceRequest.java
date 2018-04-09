@@ -17,4 +17,5 @@ public class SalesInvoiceRequest {
     private String project;
     private Boolean isPosted;
     private List<SalesInvoiceRequestLineItem> lineItems;
+    private TermOfPayment termOfPayment;
 }
