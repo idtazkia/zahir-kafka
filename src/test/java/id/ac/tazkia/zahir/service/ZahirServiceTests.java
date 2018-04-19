@@ -83,6 +83,7 @@ public class ZahirServiceTests {
         SalesInvoice hasil = zahirService.createSalesInvoice(request);
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
+
     }
 
     @Test
@@ -105,10 +106,11 @@ public class ZahirServiceTests {
                                         new BigDecimal("300000.00"))}));
 
         System.out.println(objectMapper.writeValueAsString(request));
-
+/*
         SalesInvoice hasil = zahirService.createSalesInvoice(request);
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
+        */
     }
 
     @Test
