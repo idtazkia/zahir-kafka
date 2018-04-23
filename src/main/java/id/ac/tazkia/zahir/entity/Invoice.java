@@ -1,10 +1,10 @@
 package id.ac.tazkia.zahir.entity;
 
 import lombok.Data;
-import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -14,12 +14,7 @@ import java.math.BigDecimal;
 @Data @Entity
 public class Invoice {
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
     private String id;
-
-    @NotNull @NotEmpty
-    private String salesInvoice;
     @NotNull @NotEmpty
     private String salesInvoiceNumber;
     @NotNull @NotEmpty
@@ -29,4 +24,6 @@ public class Invoice {
     @NotNull @Min(1)
     private BigDecimal amount;
 
+    @NotNull @Enumerated(EnumType.STRING)
+    private InvoiceStatus invoiceStatus = InvoiceStatus.UNPAID;
 }

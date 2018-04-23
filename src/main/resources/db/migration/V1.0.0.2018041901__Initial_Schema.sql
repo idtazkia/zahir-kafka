@@ -10,10 +10,34 @@ create table invoice_configuration(
 
 create table invoice (
   id VARCHAR (36),
-  sales_invoice varchar (255) not null ,
   sales_invoice_number varchar (255) not null ,
   invoice_number varchar (255) not null ,
   customer varchar (255) not null ,
   amount numeric (19,2) not null ,
-  primary key (id)
+  invoice_status varchar (255) not null ,
+  primary key (id),
+  unique (invoice_number)
+);
+
+create table bank (
+  id varchar (36),
+  account_name varchar (255) not null,
+  account_number varchar (255) not null ,
+  account_code varchar (255) not null ,
+  primary key (id),
+  unique (account_name),
+  unique (account_number),
+  unique (account_code)
+);
+
+create table invoice_payment (
+  id varchar (36),
+  id_invoice varchar(36) not null ,
+  id_bank varchar (36) not null ,
+  payment_time timestamp not null ,
+  reference_number varchar (36) not null,
+  amount numeric (19,2) not null,
+  primary key (id),
+  foreign key (id_invoice) references invoice(id),
+  foreign key (id_bank) references bank(id)
 );

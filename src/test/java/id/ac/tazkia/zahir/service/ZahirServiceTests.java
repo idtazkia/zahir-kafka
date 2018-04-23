@@ -2,6 +2,7 @@ package id.ac.tazkia.zahir.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.tazkia.zahir.dto.*;
+import id.ac.tazkia.zahir.dto.Payment;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

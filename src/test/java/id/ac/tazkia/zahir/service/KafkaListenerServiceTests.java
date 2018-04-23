@@ -16,6 +16,7 @@ import java.nio.file.Files;
 public class KafkaListenerServiceTests {
 
     @Value("classpath:/json/tagihan-response.json") private Resource tagihanResponseFile;
+    @Value("classpath:/json/tagihan-payment.json") private Resource tagihanPaymentFile;
 
     @Autowired private KafkaListenerService kafkaListenerService;
 
@@ -24,5 +25,12 @@ public class KafkaListenerServiceTests {
         String tagihanResponseContent = new String(Files.readAllBytes(tagihanResponseFile.getFile().toPath()));
         Assert.assertNotNull(tagihanResponseContent);
         kafkaListenerService.handleTagihanResponse(tagihanResponseContent);
+    }
+
+    @Test
+    public void testHandleTagihanPayment() throws Exception {
+        String tagihanPaymentContent = new String(Files.readAllBytes(tagihanPaymentFile.getFile().toPath()));
+        Assert.assertNotNull(tagihanPaymentContent);
+        kafkaListenerService.handleTagihanPayment(tagihanPaymentContent);
     }
 }

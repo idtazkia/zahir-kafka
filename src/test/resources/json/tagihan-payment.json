@@ -1,0 +1,16 @@
+{
+  "jenisTagihan" : "01",
+  "nomorTagihan" : "2018042301000003",
+  "nomorDebitur" : "92018040001",
+  "namaDebitur" : "Calon Mahasiswa",
+  "keteranganTagihan" : null,
+  "tanggalTagihan" : "2018-04-23",
+  "tanggalJatuhTempo" : "2018-10-23",
+  "statusTagihan" : "NONAKTIF",
+  "nilaiTagihan" : 300000.00,
+  "nilaiPembayaran" : 300000,
+  "nilaiAkumulasiPembayaran" : 300000.00,
+  "bank" : "bnisy001",
+  "waktuPembayaran" : "2018-04-23 10:16:50",
+  "referensiPembayaran" : "118103"
+}
