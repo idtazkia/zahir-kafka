@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -75,7 +74,7 @@ public class KafkaListenerService {
                                     new SalesInvoiceRequestLineItem(
                                             p.getId(),
                                             1,
-                                            new BigDecimal("300000.00"))}));
+                                            tagihanResponse.getNilaiTagihan())}));
 
             LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
 
