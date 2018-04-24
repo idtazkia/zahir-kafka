@@ -2,8 +2,8 @@ package id.ac.tazkia.zahir.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.tazkia.zahir.dto.*;
-import id.ac.tazkia.zahir.dto.Payment;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +57,7 @@ public class ZahirServiceTests {
         Assert.assertEquals("Program Studi S1 Ekonomi Syariah", project.getName());
     }
 
-    @Test
+    @Test @Ignore
     public void testCreateInvoiceSppTetap() throws Exception {
         Product spp = zahirService.findProductByCode("11");
         Department yayasan = zahirService.findDepartmentByCode("1");
@@ -81,13 +81,14 @@ public class ZahirServiceTests {
 
         System.out.println(objectMapper.writeValueAsString(request));
 
+
         SalesInvoice hasil = zahirService.createSalesInvoice(request);
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
 
     }
 
-    @Test
+    @Test @Ignore
     public void testCreateInvoicePmb() throws Exception {
         Product pmb = zahirService.findProductByCode("1");
         Department yayasan = zahirService.findDepartmentByCode("1");
@@ -107,14 +108,14 @@ public class ZahirServiceTests {
                                         new BigDecimal("300000.00"))}));
 
         System.out.println(objectMapper.writeValueAsString(request));
-/*
+
         SalesInvoice hasil = zahirService.createSalesInvoice(request);
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
-        */
+
     }
 
-    @Test
+    @Test @Ignore
     public void createPayment() throws Exception {
         SalesInvoice invoice = zahirService.getSalesInvoice("00000073");
         Account bnisy = zahirService.findAccountByCode("111200400");
@@ -125,8 +126,10 @@ public class ZahirServiceTests {
         paymentRequest.setCash(new PaymentRequestCash(bnisy.getId()));
 
         System.out.println(objectMapper.writeValueAsString(paymentRequest));
+
         Payment hasil = zahirService.createPayment(paymentRequest);
         Assert.assertNotNull(hasil);
         System.out.println(objectMapper.writeValueAsString(hasil));
+
     }
 }

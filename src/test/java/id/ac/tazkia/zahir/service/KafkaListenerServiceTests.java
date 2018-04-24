@@ -1,6 +1,7 @@
 package id.ac.tazkia.zahir.service;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.nio.file.Files;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest @Ignore
 public class KafkaListenerServiceTests {
 
     @Value("classpath:/json/tagihan-response.json") private Resource tagihanResponseFile;
