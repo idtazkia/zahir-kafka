@@ -3,9 +3,16 @@ create table invoice_configuration(
   invoice_type varchar(255) not null,
   department varchar(255) not null,
   product varchar(255) not null,
-  project varchar(255) not null,
   customer varchar(255),
   primary key (id)
+);
+
+create table project(
+  id VARCHAR(36),
+  code VARCHAR(255) not null,
+  name varchar (255) not null,
+  primary key (id),
+  unique (code)
 );
 
 create table invoice (

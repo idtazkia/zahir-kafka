@@ -21,6 +21,5 @@ public class InvoiceConfiguration {
 
     private String department;
     private String product;
-    private String project;
     private String customer;
 }

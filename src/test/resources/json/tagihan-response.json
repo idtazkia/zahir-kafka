@@ -2,6 +2,7 @@
   "sukses" : true,
   "debitur" : "92018040001",
   "jenisTagihan" : "pmb2017",
+  "kodeBiaya" : "PDMKMS-001",
   "nilaiTagihan" : 200000,
   "tanggalTagihan" : "2018-04-16",
   "tanggalJatuhTempo" : "2019-04-15",

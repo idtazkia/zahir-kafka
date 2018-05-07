@@ -1,12 +1,10 @@
 package id.ac.tazkia.zahir.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import id.ac.tazkia.zahir.dao.BankDao;
-import id.ac.tazkia.zahir.dao.InvoiceConfigurationDao;
-import id.ac.tazkia.zahir.dao.InvoiceDao;
-import id.ac.tazkia.zahir.dao.InvoicePaymentDao;
+import id.ac.tazkia.zahir.dao.*;
 import id.ac.tazkia.zahir.dto.*;
 import id.ac.tazkia.zahir.entity.*;
+import id.ac.tazkia.zahir.entity.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +27,7 @@ public class KafkaListenerService {
     @Autowired private InvoiceDao invoiceDao;
     @Autowired private InvoicePaymentDao invoicePaymentDao;
     @Autowired private InvoiceConfigurationDao invoiceConfigurationDao;
+    @Autowired private ProjectDao projectDao;
     @Autowired private ZahirService zahirService;
 
     @KafkaListener(topics = "${kafka.topic.tagihan.response}", groupId = "${spring.kafka.consumer.group-id}")
@@ -41,6 +40,12 @@ public class KafkaListenerService {
 
             if (config == null) {
                 LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
+                return;
+            }
+
+            Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
+            if (project == null) {
+                LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
                 return;
             }
 
