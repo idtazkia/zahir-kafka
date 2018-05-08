@@ -1,10 +1,12 @@
 package id.ac.tazkia.zahir.entity;
 
+import lombok.Data;
+
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.validation.constraints.NotEmpty;
 
-@Entity
+@Entity @Data
 public class Project {
 
     @Id
