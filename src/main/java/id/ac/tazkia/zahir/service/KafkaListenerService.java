@@ -8,11 +8,13 @@ import id.ac.tazkia.zahir.entity.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -30,69 +32,36 @@ public class KafkaListenerService {
     @Autowired private ProjectDao projectDao;
     @Autowired private ZahirService zahirService;
 
+    @Value("${jenistagihan.pmb.registrasi}") private String jenisTagihanPmbRegistrasi;
+    @Value("${jenistagihan.pmb.daftarulang}") private String jenisTagihanPmbDaftarulang;
+    @Value("${jenistagihan.spp.tetap}") private String jenisTagihanSppTetap;
+    @Value("${jenistagihan.spp.variabel.uts}") private String jenisTagihanSppVariabelUts;
+    @Value("${jenistagihan.spp.variabel.uas}") private String jenisTagihanSppVariabelUas;
+
     @KafkaListener(topics = "${kafka.topic.tagihan.response}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleTagihanResponse(String message) {
 
         try {
             LOGGER.debug("Terima tagihan response : {}", message);
             TagihanResponse tagihanResponse = objectMapper.readValue(message, TagihanResponse.class);
-            InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(tagihanResponse.getJenisTagihan());
 
-            if (config == null) {
-                LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
-                return;
-            }
+            String jenisTagihan = tagihanResponse.getJenisTagihan();
+            LOGGER.info("Incoming invoice type {}", jenisTagihan);
 
-            Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
-            if (project == null) {
-                LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
-                return;
-            }
-
-            Product p = new Product();
-            p.setId(config.getProduct());
-
-            Department dept = new Department();
-            dept.setId(config.getDepartment());
-
-            Customer customer = new Customer();
-
-            if(config.getCustomer() != null) {
-                customer.setId(config.getCustomer());
+            if (jenisTagihanPmbRegistrasi.equals(jenisTagihan)) {
+                handlePmbRegistrasi(tagihanResponse);
+            } else if (jenisTagihanPmbDaftarulang.equals(jenisTagihan)) {
+                handlePmbDaftarulang(tagihanResponse);
+            } else if (jenisTagihanSppTetap.equals(jenisTagihan)) {
+                handleTagihanSpp(tagihanResponse);
+            } else if (jenisTagihanSppVariabelUts.equals(jenisTagihan)) {
+                handleTagihanSpp(tagihanResponse);
+            } else if (jenisTagihanSppVariabelUas.equals(jenisTagihan)) {
+                handleTagihanSpp(tagihanResponse);
             } else {
-                customer = zahirService.findCustomerByCode(tagihanResponse.getDebitur());
+                LOGGER.warn("Invoice type {} not supported", jenisTagihan);
             }
 
-            if (customer == null || customer.getId() == null) {
-                LOGGER.error("Invoice Type {} has no customer configuration", tagihanResponse.getJenisTagihan());
-                return;
-            }
-
-            SalesInvoiceRequest request = new SalesInvoiceRequest();
-            request.setIsPosted(true);
-            request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
-            request.setCustomer(customer.getId());
-            request.setDepartment(dept.getId());
-            request.setLineItems(
-                    Arrays.asList(
-                            new SalesInvoiceRequestLineItem[]{
-                                    new SalesInvoiceRequestLineItem(
-                                            p.getId(),
-                                            1,
-                                            tagihanResponse.getNilaiTagihan())}));
-
-            LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
-
-            SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
-
-            Invoice inv = new Invoice();
-            inv.setId(salesInvoice.getId());
-            inv.setAmount(salesInvoice.getTotalAmount());
-            inv.setCustomer(salesInvoice.getCustomer().getId());
-            inv.setInvoiceNumber(tagihanResponse.getNomorTagihan());
-            inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
-
-            invoiceDao.save(inv);
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -104,7 +73,15 @@ public class KafkaListenerService {
             LOGGER.debug("Terima pembayaran tagihan : {}", message);
             PembayaranTagihan pembayaranTagihan = objectMapper.readValue(message, PembayaranTagihan.class);
 
-            Invoice invoice = invoiceDao.findByInvoiceNumber(pembayaranTagihan.getNomorTagihan());
+            Invoice invoice = null;
+
+            // khusus tagihan PMB, create invoice dulu
+            if (jenisTagihanPmbRegistrasi.equals(pembayaranTagihan.getJenisTagihan())) {
+                invoice = createInvoiceRegistrasi(pembayaranTagihan);
+            } else {
+                invoice = invoiceDao.findByInvoiceNumber(pembayaranTagihan.getNomorTagihan());
+            }
+
             if (invoice == null) {
                 LOGGER.error("No tagihan {} tidak ada di database", pembayaranTagihan.getNomorTagihan());
                 return;
@@ -145,5 +122,135 @@ public class KafkaListenerService {
             LOGGER.error(e.getMessage(), e);
         }
 
+    }
+
+    private Invoice createInvoiceRegistrasi(PembayaranTagihan pembayaranTagihan) {
+        try {
+            InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(jenisTagihanPmbRegistrasi);
+
+            if (config == null) {
+                LOGGER.error("Invoice Type {} not yet configured", jenisTagihanPmbRegistrasi);
+                return null;
+            }
+
+            Project project = projectDao.findByCode(jenisTagihanPmbRegistrasi);
+            if (project == null) {
+                LOGGER.error("Project code {} not yet configured", jenisTagihanPmbRegistrasi);
+                return null;
+            }
+
+            Product product = new Product();
+            product.setId(config.getProduct());
+
+            Department dept = new Department();
+            dept.setId(config.getDepartment());
+
+            Customer customer = new Customer();
+            customer.setId(config.getCustomer());
+
+            SalesInvoiceRequest request = new SalesInvoiceRequest();
+            request.setIsPosted(true);
+            request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            request.setCustomer(customer.getId());
+            request.setDepartment(dept.getId());
+            request.setProject(project.getId());
+            request.setLineItems(
+                    Arrays.asList(
+                            new SalesInvoiceRequestLineItem[]{
+                                    new SalesInvoiceRequestLineItem(
+                                            product.getId(),
+                                            1,
+                                            pembayaranTagihan.getNilaiTagihan())}));
+
+            LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
+
+            SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
+
+            Invoice inv = new Invoice();
+            inv.setId(salesInvoice.getId());
+            inv.setAmount(salesInvoice.getTotalAmount());
+            inv.setCustomer(salesInvoice.getCustomer().getId());
+            inv.setInvoiceNumber(pembayaranTagihan.getNomorTagihan());
+            inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
+
+            invoiceDao.save(inv);
+            return inv;
+        } catch (Exception err) {
+            LOGGER.error(err.getMessage(), err);
+        }
+        return null;
+    }
+
+    private void handlePmbRegistrasi(TagihanResponse tagihanResponse) {
+        LOGGER.info("Tagihan registrasi PMB dibuat pada waktu payment");
+    }
+
+    private void handlePmbDaftarulang(TagihanResponse tagihanResponse) {
+        try {
+            InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(tagihanResponse.getJenisTagihan());
+
+            if (config == null) {
+                LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
+                return;
+            }
+
+            Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
+            if (project == null) {
+                LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
+                return;
+            }
+
+            Product product = new Product();
+            product.setId(config.getProduct());
+
+            Department dept = new Department();
+            dept.setId(config.getDepartment());
+
+            Customer customer = new Customer();
+
+            if (config.getCustomer() != null) {
+                customer.setId(config.getCustomer());
+            } else {
+                customer = zahirService.findCustomerByCode(tagihanResponse.getDebitur());
+            }
+
+            if (customer == null || customer.getId() == null) {
+                LOGGER.error("Invoice Type {} has no customer configuration", tagihanResponse.getJenisTagihan());
+                return;
+            }
+
+            SalesInvoiceRequest request = new SalesInvoiceRequest();
+            request.setIsPosted(true);
+            request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            request.setCustomer(customer.getId());
+            request.setDepartment(dept.getId());
+            request.setProject(project.getId());
+            request.setLineItems(
+                    Arrays.asList(
+                            new SalesInvoiceRequestLineItem[]{
+                                    new SalesInvoiceRequestLineItem(
+                                            product.getId(),
+                                            1,
+                                            tagihanResponse.getNilaiTagihan())}));
+
+            LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
+
+            SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
+
+            Invoice inv = new Invoice();
+            inv.setId(salesInvoice.getId());
+            inv.setAmount(salesInvoice.getTotalAmount());
+            inv.setCustomer(salesInvoice.getCustomer().getId());
+            inv.setInvoiceNumber(tagihanResponse.getNomorTagihan());
+            inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
+
+            invoiceDao.save(inv);
+        } catch (Exception err) {
+            LOGGER.error(err.getMessage(), err);
+        }
+    }
+
+    private void handleTagihanSpp(TagihanResponse tagihanResponse) {
+        LOGGER.warn("Invoice type {} not supported", tagihanResponse.getJenisTagihan());
     }
 }
