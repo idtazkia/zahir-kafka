@@ -21,6 +21,10 @@ public class Invoice {
     private String invoiceNumber;
     @NotNull @NotEmpty
     private String customer;
+    @NotNull @NotEmpty
+    private String project;
+    @NotNull @NotEmpty
+    private String department;
     @NotNull @Min(1)
     private BigDecimal amount;
 

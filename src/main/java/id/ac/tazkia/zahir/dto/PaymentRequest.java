@@ -14,6 +14,8 @@ import java.util.List;
 public class PaymentRequest {
     private String transactionDate;
     private String customer;
+    private String project;
+    private String department;
     private List<PaymentRequestLineItem> lineItems = new ArrayList<>();
     private PaymentRequestCash cash;
 }

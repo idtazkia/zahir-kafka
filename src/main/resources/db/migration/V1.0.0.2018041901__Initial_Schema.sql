@@ -20,6 +20,8 @@ create table invoice (
   sales_invoice_number varchar (255) not null ,
   invoice_number varchar (255) not null ,
   customer varchar (255) not null ,
+  project varchar (255) not null ,
+  department varchar (255) not null ,
   amount numeric (19,2) not null ,
   invoice_status varchar (255) not null ,
   primary key (id),

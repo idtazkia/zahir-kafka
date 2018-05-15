@@ -104,6 +104,8 @@ public class KafkaListenerService {
 
             PaymentRequest paymentRequest = new PaymentRequest();
             paymentRequest.setCustomer(invoice.getCustomer());
+            paymentRequest.setProject(invoice.getProject());
+            paymentRequest.setDepartment(invoice.getDepartment());
             paymentRequest.setTransactionDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
             paymentRequest.getLineItems().add(
                     new PaymentRequestLineItem(invoice.getId(), invoice.getAmount()));
@@ -139,7 +141,7 @@ public class KafkaListenerService {
                 return null;
             }
 
-            Project project = projectDao.findByCode(jenisTagihanPmbRegistrasi);
+            Project project = projectDao.findByCode(pembayaranTagihan.getKodeBiaya());
             if (project == null) {
                 LOGGER.error("Project code {} not yet configured", jenisTagihanPmbRegistrasi);
                 return null;
@@ -171,11 +173,14 @@ public class KafkaListenerService {
             LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
 
             SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
+            LOGGER.debug("Sales invoice response : {}", salesInvoice);
 
             Invoice inv = new Invoice();
             inv.setId(salesInvoice.getId());
             inv.setAmount(salesInvoice.getTotalAmount());
             inv.setCustomer(salesInvoice.getCustomer().getId());
+            inv.setProject(salesInvoice.getProject().getId());
+            inv.setDepartment(salesInvoice.getDepartment().getId());
             inv.setInvoiceNumber(pembayaranTagihan.getNomorTagihan());
             inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
 
