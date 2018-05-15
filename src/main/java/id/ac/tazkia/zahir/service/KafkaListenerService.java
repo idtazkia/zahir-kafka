@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -37,6 +36,9 @@ public class KafkaListenerService {
     @Value("${jenistagihan.spp.tetap}") private String jenisTagihanSppTetap;
     @Value("${jenistagihan.spp.variabel.uts}") private String jenisTagihanSppVariabelUts;
     @Value("${jenistagihan.spp.variabel.uas}") private String jenisTagihanSppVariabelUas;
+
+    @Value("${fitur.tagihan.pmb.enable}") private Boolean tagihanPmbEnabled;
+    @Value("${fitur.tagihan.spp.enable}") private Boolean tagihanSppEnabled;
 
     @KafkaListener(topics = "${kafka.topic.tagihan.response}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleTagihanResponse(String message) {
@@ -77,6 +79,10 @@ public class KafkaListenerService {
 
             // khusus tagihan PMB, create invoice dulu
             if (jenisTagihanPmbRegistrasi.equals(pembayaranTagihan.getJenisTagihan())) {
+                if (!tagihanPmbEnabled) {
+                    LOGGER.info("Fitur tagihan PMB tidak diaktifkan");
+                    return;
+                }
                 invoice = createInvoiceRegistrasi(pembayaranTagihan);
             } else {
                 invoice = invoiceDao.findByInvoiceNumber(pembayaranTagihan.getNomorTagihan());
@@ -251,6 +257,10 @@ public class KafkaListenerService {
     }
 
     private void handleTagihanSpp(TagihanResponse tagihanResponse) {
+        if (!tagihanSppEnabled) {
+            LOGGER.info("Fitur tagihan SPP tidak diaktifkan");
+            return;
+        }
         LOGGER.warn("Invoice type {} not supported", tagihanResponse.getJenisTagihan());
     }
 }
