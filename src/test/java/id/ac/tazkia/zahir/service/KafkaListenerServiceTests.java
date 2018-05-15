@@ -21,14 +21,14 @@ public class KafkaListenerServiceTests {
 
     @Autowired private KafkaListenerService kafkaListenerService;
 
-    @Test
+    @Test @Ignore
     public void testHandleTagihanResponse() throws Exception {
         String tagihanResponseContent = new String(Files.readAllBytes(tagihanResponseFile.getFile().toPath()));
         Assert.assertNotNull(tagihanResponseContent);
         kafkaListenerService.handleTagihanResponse(tagihanResponseContent);
     }
 
-    @Test
+    @Test @Ignore
     public void testHandleTagihanPayment() throws Exception {
         String tagihanPaymentContent = new String(Files.readAllBytes(tagihanPaymentFile.getFile().toPath()));
         Assert.assertNotNull(tagihanPaymentContent);

@@ -21,7 +21,7 @@ public class ZahirServiceTests {
     @Autowired private ZahirService zahirService;
     @Autowired private ObjectMapper objectMapper;
 
-    @Test
+    @Test @Ignore
     public void testProductByCode() {
         String code = "1";
 
@@ -30,7 +30,7 @@ public class ZahirServiceTests {
         Assert.assertEquals("Pendaftaran Mahasiswa Baru 2018", pmb.getName());
     }
 
-    @Test
+    @Test @Ignore
     public void testCustomerByCode() {
         String code = "16103011";
 
@@ -39,7 +39,7 @@ public class ZahirServiceTests {
         Assert.assertEquals("Ahmad Misluha", customer.getName());
     }
 
-    @Test
+    @Test @Ignore
     public void testDepartmentByCode() {
         String code = "1";
 
@@ -48,7 +48,7 @@ public class ZahirServiceTests {
         Assert.assertEquals("Yayasan", department.getName());
     }
 
-    @Test
+    @Test @Ignore
     public void testProjectByCode() {
         String code = "1";
 
