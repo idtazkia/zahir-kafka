@@ -37,9 +37,6 @@ public class KafkaListenerService {
     @Value("${jenistagihan.spp.variabel.uts}") private String jenisTagihanSppVariabelUts;
     @Value("${jenistagihan.spp.variabel.uas}") private String jenisTagihanSppVariabelUas;
 
-    @Value("${fitur.tagihan.pmb.enable}") private Boolean tagihanPmbEnabled;
-    @Value("${fitur.tagihan.spp.enable}") private Boolean tagihanSppEnabled;
-
     @KafkaListener(topics = "${kafka.topic.tagihan.response}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleTagihanResponse(String message) {
 
@@ -51,18 +48,68 @@ public class KafkaListenerService {
             LOGGER.info("Incoming invoice type {}", jenisTagihan);
 
             if (jenisTagihanPmbRegistrasi.equals(jenisTagihan)) {
-                handlePmbRegistrasi(tagihanResponse);
-            } else if (jenisTagihanPmbDaftarulang.equals(jenisTagihan)) {
-                handlePmbDaftarulang(tagihanResponse);
-            } else if (jenisTagihanSppTetap.equals(jenisTagihan)) {
-                handleTagihanSpp(tagihanResponse);
-            } else if (jenisTagihanSppVariabelUts.equals(jenisTagihan)) {
-                handleTagihanSpp(tagihanResponse);
-            } else if (jenisTagihanSppVariabelUas.equals(jenisTagihan)) {
-                handleTagihanSpp(tagihanResponse);
-            } else {
-                LOGGER.warn("Invoice type {} not supported", jenisTagihan);
+                LOGGER.info("Tagihan registrasi PMB dibuat pada waktu payment");
+                return;
             }
+
+            InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(tagihanResponse.getJenisTagihan());
+
+            if (config == null) {
+                LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
+                return;
+            }
+
+            Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
+            if (project == null) {
+                LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
+                return;
+            }
+
+            Product product = new Product();
+            product.setId(config.getProduct());
+
+            Department dept = new Department();
+            dept.setId(config.getDepartment());
+
+            Customer customer = new Customer();
+
+            if (config.getCustomer() != null) {
+                customer.setId(config.getCustomer());
+            } else {
+                customer = zahirService.findCustomerByCode(tagihanResponse.getDebitur());
+            }
+
+            if (customer == null || customer.getId() == null) {
+                LOGGER.error("Invoice Type {} has no customer configuration", tagihanResponse.getJenisTagihan());
+                return;
+            }
+
+            SalesInvoiceRequest request = new SalesInvoiceRequest();
+            request.setIsPosted(true);
+            request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+            request.setCustomer(customer.getId());
+            request.setDepartment(dept.getId());
+            request.setProject(project.getId());
+            request.setLineItems(
+                    Arrays.asList(
+                            new SalesInvoiceRequestLineItem[]{
+                                    new SalesInvoiceRequestLineItem(
+                                            product.getId(),
+                                            1,
+                                            tagihanResponse.getNilaiTagihan())}));
+
+            LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
+
+            SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
+
+            Invoice inv = new Invoice();
+            inv.setId(salesInvoice.getId());
+            inv.setAmount(salesInvoice.getTotalAmount());
+            inv.setCustomer(salesInvoice.getCustomer().getId());
+            inv.setInvoiceNumber(tagihanResponse.getNomorTagihan());
+            inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
+
+            invoiceDao.save(inv);
 
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
@@ -79,10 +126,6 @@ public class KafkaListenerService {
 
             // khusus tagihan PMB, create invoice dulu
             if (jenisTagihanPmbRegistrasi.equals(pembayaranTagihan.getJenisTagihan())) {
-                if (!tagihanPmbEnabled) {
-                    LOGGER.info("Fitur tagihan PMB tidak diaktifkan");
-                    return;
-                }
                 invoice = createInvoiceRegistrasi(pembayaranTagihan);
             } else {
                 invoice = invoiceDao.findByInvoiceNumber(pembayaranTagihan.getNomorTagihan());
@@ -129,7 +172,6 @@ public class KafkaListenerService {
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
-
     }
 
     private Invoice createInvoiceRegistrasi(PembayaranTagihan pembayaranTagihan) {
@@ -190,82 +232,5 @@ public class KafkaListenerService {
             LOGGER.error(err.getMessage(), err);
         }
         return null;
-    }
-
-    private void handlePmbRegistrasi(TagihanResponse tagihanResponse) {
-        LOGGER.info("Tagihan registrasi PMB dibuat pada waktu payment");
-    }
-
-    private void handlePmbDaftarulang(TagihanResponse tagihanResponse) {
-        try {
-            InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(tagihanResponse.getJenisTagihan());
-
-            if (config == null) {
-                LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
-                return;
-            }
-
-            Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
-            if (project == null) {
-                LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
-                return;
-            }
-
-            Product product = new Product();
-            product.setId(config.getProduct());
-
-            Department dept = new Department();
-            dept.setId(config.getDepartment());
-
-            Customer customer = new Customer();
-
-            if (config.getCustomer() != null) {
-                customer.setId(config.getCustomer());
-            } else {
-                customer = zahirService.findCustomerByCode(tagihanResponse.getDebitur());
-            }
-
-            if (customer == null || customer.getId() == null) {
-                LOGGER.error("Invoice Type {} has no customer configuration", tagihanResponse.getJenisTagihan());
-                return;
-            }
-
-            SalesInvoiceRequest request = new SalesInvoiceRequest();
-            request.setIsPosted(true);
-            request.setInvoiceDate(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
-            request.setCustomer(customer.getId());
-            request.setDepartment(dept.getId());
-            request.setProject(project.getId());
-            request.setLineItems(
-                    Arrays.asList(
-                            new SalesInvoiceRequestLineItem[]{
-                                    new SalesInvoiceRequestLineItem(
-                                            product.getId(),
-                                            1,
-                                            tagihanResponse.getNilaiTagihan())}));
-
-            LOGGER.debug("Sales invoice request : {}", objectMapper.writeValueAsString(request));
-
-            SalesInvoice salesInvoice = zahirService.createSalesInvoice(request);
-
-            Invoice inv = new Invoice();
-            inv.setId(salesInvoice.getId());
-            inv.setAmount(salesInvoice.getTotalAmount());
-            inv.setCustomer(salesInvoice.getCustomer().getId());
-            inv.setInvoiceNumber(tagihanResponse.getNomorTagihan());
-            inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
-
-            invoiceDao.save(inv);
-        } catch (Exception err) {
-            LOGGER.error(err.getMessage(), err);
-        }
-    }
-
-    private void handleTagihanSpp(TagihanResponse tagihanResponse) {
-        if (!tagihanSppEnabled) {
-            LOGGER.info("Fitur tagihan SPP tidak diaktifkan");
-            return;
-        }
-        LOGGER.warn("Invoice type {} not supported", tagihanResponse.getJenisTagihan());
     }
 }
