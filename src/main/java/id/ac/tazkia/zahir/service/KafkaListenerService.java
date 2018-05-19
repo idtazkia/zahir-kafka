@@ -154,6 +154,7 @@ public class KafkaListenerService {
             paymentRequest.getLineItems().add(
                     new PaymentRequestLineItem(invoice.getId(), invoice.getAmount()));
             paymentRequest.setCash(new PaymentRequestCash(bankAccount.getId()));
+            paymentRequest.setDescription(pembayaranTagihan.getKeteranganTagihan());
 
             LOGGER.debug("Payment Request : {}", objectMapper.writeValueAsString(paymentRequest));
             Payment payment = zahirService.createPayment(paymentRequest);

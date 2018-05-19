@@ -18,4 +18,5 @@ public class PaymentRequest {
     private String department;
     private List<PaymentRequestLineItem> lineItems = new ArrayList<>();
     private PaymentRequestCash cash;
+    private String description;
 }
