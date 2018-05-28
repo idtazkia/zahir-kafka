@@ -60,6 +60,11 @@ public class KafkaListenerService {
                 return;
             }
 
+            Invoice existing = invoiceDao.findByInvoiceNumber(tagihanResponse.getNomorTagihan());
+            if (existing != null) {
+                LOGGER.info("Tagihan {} sudah ada di database : {} ", existing.getInvoiceNumber(), existing.toString());
+            }
+
             InvoiceConfiguration config = invoiceConfigurationDao.findByInvoiceType(tagihanResponse.getJenisTagihan());
 
             if (config == null) {
@@ -152,6 +157,11 @@ public class KafkaListenerService {
 
             if (invoice == null) {
                 LOGGER.error("No tagihan {} tidak ada di database", pembayaranTagihan.getNomorTagihan());
+                return;
+            }
+
+            if (InvoiceStatus.PAID.equals(invoice.getInvoiceStatus())) {
+                LOGGER.info("Tagihan {} - {} sudah lunas", invoice.getInvoiceNumber(), invoice.getSalesInvoiceNumber());
                 return;
             }
 
