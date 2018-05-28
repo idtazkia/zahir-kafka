@@ -107,6 +107,7 @@ public class KafkaListenerService {
             inv.setAmount(salesInvoice.getTotalAmount());
             inv.setCustomer(salesInvoice.getCustomer().getId());
             inv.setProject(project.getId());
+            inv.setDepartment(config.getDepartment());
             inv.setInvoiceNumber(tagihanResponse.getNomorTagihan());
             inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
 
