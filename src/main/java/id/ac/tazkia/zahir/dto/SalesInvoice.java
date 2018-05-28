@@ -17,6 +17,6 @@ public class SalesInvoice {
     private Customer customer;
     private Department department;
     private Project project;
-    private List<Product> lineItems;
+    private List<SalesInvoiceLineItem> lineItems;
     private BigDecimal totalAmount;
 }
