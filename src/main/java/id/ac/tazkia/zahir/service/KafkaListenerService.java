@@ -7,6 +7,7 @@ import id.ac.tazkia.zahir.entity.*;
 import id.ac.tazkia.zahir.entity.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -26,6 +27,7 @@ public class KafkaListenerService {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private BankDao bankDao;
     @Autowired private InvoiceDao invoiceDao;
+    @Autowired private IncomingInvoiceDao incomingInvoiceDao;
     @Autowired private InvoicePaymentDao invoicePaymentDao;
     @Autowired private InvoiceConfigurationDao invoiceConfigurationDao;
     @Autowired private ProjectDao projectDao;
@@ -44,11 +46,17 @@ public class KafkaListenerService {
             LOGGER.debug("Terima tagihan response : {}", message);
             TagihanResponse tagihanResponse = objectMapper.readValue(message, TagihanResponse.class);
 
+            IncomingInvoice incomingInvoice = new IncomingInvoice();
+            BeanUtils.copyProperties(tagihanResponse, incomingInvoice);
+            incomingInvoiceDao.save(incomingInvoice);
+
             String jenisTagihan = tagihanResponse.getJenisTagihan();
-            LOGGER.info("Incoming invoice type {}", jenisTagihan);
+            LOGGER.info("Incoming invoice number {} type {}", tagihanResponse.getNomorTagihan(), jenisTagihan);
 
             if (jenisTagihanPmbRegistrasi.equals(jenisTagihan)) {
                 LOGGER.info("Tagihan registrasi PMB dibuat pada waktu payment");
+                incomingInvoice.setStatus(IncomingInvoiceStatus.SUCCESS);
+                incomingInvoiceDao.save(incomingInvoice);
                 return;
             }
 
@@ -56,12 +64,16 @@ public class KafkaListenerService {
 
             if (config == null) {
                 LOGGER.error("Invoice Type {} not yet configured", tagihanResponse.getJenisTagihan());
+                incomingInvoice.setStatus(IncomingInvoiceStatus.ERROR);
+                incomingInvoiceDao.save(incomingInvoice);
                 return;
             }
 
             Project project = projectDao.findByCode(tagihanResponse.getKodeBiaya());
             if (project == null) {
                 LOGGER.error("Project code {} not yet configured", tagihanResponse.getKodeBiaya());
+                incomingInvoice.setStatus(IncomingInvoiceStatus.ERROR);
+                incomingInvoiceDao.save(incomingInvoice);
                 return;
             }
 
@@ -81,6 +93,8 @@ public class KafkaListenerService {
 
             if (customer == null || customer.getId() == null) {
                 LOGGER.error("Invoice Type {} has no customer configuration", tagihanResponse.getJenisTagihan());
+                incomingInvoice.setStatus(IncomingInvoiceStatus.ERROR);
+                incomingInvoiceDao.save(incomingInvoice);
                 return;
             }
 
@@ -112,6 +126,9 @@ public class KafkaListenerService {
             inv.setSalesInvoiceNumber(salesInvoice.getInvoiceNumber());
 
             invoiceDao.save(inv);
+
+            incomingInvoice.setStatus(IncomingInvoiceStatus.SUCCESS);
+            incomingInvoiceDao.save(incomingInvoice);
 
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
